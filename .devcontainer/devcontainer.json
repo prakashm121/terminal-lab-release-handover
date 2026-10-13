@@ -1,0 +1,20 @@
+{
+  "name": "Tech Lab 2 - Terminal Tooling & Incident Handover",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "terminal.integrated.fontSize": 14,
+        "editor.wordWrap": "on"
+      },
+      "extensions": [
+        "bierner.markdown-preview-github-styles"
+      ]
+    }
+  },
+  "postCreateCommand": "chmod +x lab/*.sh scripts/*.sh 2>/dev/null || true && python3 scripts/verify_environment.py",
+  "remoteUser": "vscode"
+}

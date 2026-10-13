@@ -1,0 +1,7 @@
+CR-102|checkout-service|1|alice|OPEN|Checkout gateway connection timeout in canary
+CR-18|checkout-service|2|bob|OPEN|Database pool max connections sizing review
+CR-9|checkout-service|1|alice|OPEN|Canary pods entering CrashLoopBackOff state
+CR-22|checkout-service|3|charlie|OPEN|Update Prometheus metrics exporter to v1.4
+CR-105|checkout-service|2|bob|OPEN|Payment gateway retry attempts dropped to zero
+CR-7|checkout-service|1|alice|OPEN|Investigate DB_TIMEOUT_MS env var regression
+CR-402|checkout-service|4|bob|OPEN|Add structured JSON logging to checkout handlers

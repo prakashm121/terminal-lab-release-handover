@@ -1,0 +1,79 @@
+[2026-10-12 03:38:01] [ci-orchestrator] Pipeline triggered: release/v2.4.1 (commit sha: 8f3c1a9e)
+[2026-10-12 03:38:02] [ci-orchestrator] Runner agent assigned: runner-linux-amd64-04
+[2026-10-12 03:38:03] [ci-orchestrator] Workspace initialized at /opt/builds/cloudretail/v2.4.1
+[2026-10-12 03:38:05] [git-sync] Cloning repository: git@github.com:cloudretail/core-platform.git
+[2026-10-12 03:38:08] [git-sync] Checked out branch 'release/v2.4.1' at revision 8f3c1a9e402b
+[2026-10-12 03:38:10] [dependency-manager] Resolving monorepo lockfile...
+[2026-10-12 03:38:15] [dependency-manager] Audited 1,428 dependencies in 4.82s. 0 vulnerabilities found.
+[2026-10-12 03:38:18] [build-phase] Initiating Stage 1: Static Analysis & Unit Tests
+[2026-10-12 03:38:20] [build-phase] Parallel test runner launched for 4 services:
+[2026-10-12 03:38:20] [build-phase]   - svc: frontend-web
+[2026-10-12 03:38:20] [build-phase]   - svc: auth-service
+[2026-10-12 03:38:20] [build-phase]   - svc: inventory-api
+[2026-10-12 03:38:20] [build-phase]   - svc: checkout-service
+[2026-10-12 03:38:22] [frontend-web] [INFO] Compiling TypeScript assets with target ES2022...
+[2026-10-12 03:38:25] [frontend-web] [INFO] Bundle optimization complete: 342 kB gzip.
+[2026-10-12 03:38:27] [frontend-web] [PASS] 42/42 component tests passed in 4.9s.
+[2026-10-12 03:38:30] [auth-service] [INFO] Validating JWT RS256 token verification suite...
+[2026-10-12 03:38:33] [auth-service] [PASS] 88/88 authentication unit tests passed in 3.1s.
+[2026-10-12 03:38:36] [inventory-api] [INFO] Loading mock PostgreSQL schema and seed fixtures...
+[2026-10-12 03:38:39] [inventory-api] [PASS] 64/64 warehouse stock tests passed in 5.2s.
+[2026-10-12 03:38:41] [checkout-service] [INFO] Compiling Go binaries (v1.22.4)...
+[2026-10-12 03:38:45] [checkout-service] [INFO] Running unit tests with mock database driver...
+[2026-10-12 03:38:48] [checkout-service] [PASS] 110/110 unit tests passed (mocked driver).
+[2026-10-12 03:38:50] [build-phase] Stage 1 Completed Successfully. All test suites green.
+[2026-10-12 03:38:52] [docker-engine] Initiating Stage 2: Container Image Build & Push
+[2026-10-12 03:38:55] [docker-engine] Building registry.cloudretail.internal/frontend-web:2.4.1
+[2026-10-12 03:39:02] [docker-engine] Pushed frontend-web:2.4.1 (sha256:4a01c89...) [34.1MB]
+[2026-10-12 03:39:05] [docker-engine] Building registry.cloudretail.internal/auth-service:2.4.1
+[2026-10-12 03:39:12] [docker-engine] Pushed auth-service:2.4.1 (sha256:88bc41d...) [28.6MB]
+[2026-10-12 03:39:15] [docker-engine] Building registry.cloudretail.internal/inventory-api:2.4.1
+[2026-10-12 03:39:24] [docker-engine] Pushed inventory-api:2.4.1 (sha256:ef4012a...) [42.0MB]
+[2026-10-12 03:39:27] [docker-engine] Building registry.cloudretail.internal/checkout-service:2.4.1
+[2026-10-12 03:39:35] [docker-engine] Pushed checkout-service:2.4.1 (sha256:7c9e013...) [38.4MB]
+[2026-10-12 03:39:38] [deploy-controller] Initiating Stage 3: Progressive Canary Rollout
+[2026-10-12 03:39:40] [deploy-controller] Target Cluster: k8s-eu-west1-prod-canary
+[2026-10-12 03:39:42] [deploy-controller] Namespace: production
+[2026-10-12 03:39:45] [k8s-client] Applying ConfigMap: auth-service-config-v2.4.1
+[2026-10-12 03:39:48] [k8s-client] Applying ConfigMap: inventory-api-config-v2.4.1
+[2026-10-12 03:39:51] [k8s-client] Applying ConfigMap: checkout-service-config-v2.4.1 (diff detected vs v2.4.0)
+[2026-10-12 03:39:54] [k8s-client] Rolling restart initiated for pod replicas (canary weight: 10%)
+[2026-10-12 03:39:58] [k8s-client] Pod pod-frontend-web-7bc9b69-v2m9x status: Running
+[2026-10-12 03:40:02] [k8s-client] Pod pod-auth-service-589fdf-kl90p status: Running
+[2026-10-12 03:40:06] [k8s-client] Pod pod-inventory-api-4d7a88-nm12b status: Running
+[2026-10-12 03:40:10] [k8s-client] Pod pod-checkout-service-9c10aa-ww87z status: ContainerCreating
+[2026-10-12 03:40:15] [k8s-client] Pod pod-checkout-service-9c10aa-ww87z status: Running
+[2026-10-12 03:40:20] [health-monitor] Probing readiness endpoints on cluster ingress...
+[2026-10-12 03:40:22] [health-monitor] GET http://frontend-web.internal/healthz -> 200 OK (latency: 4ms)
+[2026-10-12 03:40:24] [health-monitor] GET http://auth-service.internal/healthz -> 200 OK (latency: 7ms)
+[2026-10-12 03:40:26] [health-monitor] GET http://inventory-api.internal/healthz -> 200 OK (latency: 12ms)
+[2026-10-12 03:40:30] [health-monitor] Probing checkout-service readiness: GET http://checkout-service.internal/healthz
+[2026-10-12 03:40:35] [health-monitor] [WARNING] Endpoint http://checkout-service.internal/healthz failed attempt 1 (HTTP 503)
+[2026-10-12 03:40:40] [health-monitor] Probing checkout-service readiness: attempt 2 of 3...
+[2026-10-12 03:40:45] [health-monitor] [WARNING] Endpoint http://checkout-service.internal/healthz failed attempt 2 (HTTP 503)
+[2026-10-12 03:40:50] [health-monitor] Probing checkout-service readiness: attempt 3 of 3...
+[2026-10-12 03:40:55] [health-monitor] [ERROR] Endpoint http://checkout-service.internal/healthz failed attempt 3 (HTTP 503 Service Unavailable)
+[2026-10-12 03:41:00] [k8s-client] Inspecting pod logs: pod-checkout-service-9c10aa-ww87z
+[2026-10-12 03:41:02] [checkout-service] [INFO] Starting CloudRetail Checkout Gateway v2.4.1...
+[2026-10-12 03:41:03] [checkout-service] [INFO] Loaded configuration from environment
+[2026-10-12 03:41:04] [checkout-service] [INFO] Initializing HTTP router on port :8080
+[2026-10-12 03:41:05] [checkout-service] [INFO] Connecting to postgres-cluster.internal:5432...
+[2026-10-12 03:41:05] [checkout-service] [DEBUG] Configured DB_TIMEOUT_MS = 50ms
+[2026-10-12 03:41:06] [checkout-service] [ERROR] Connection handshake exceeded configured timeout threshold (50ms)
+[2026-10-12 03:41:07] [checkout-service] [ERROR] Failed to acquire connection from pool: context deadline exceeded
+[2026-10-12 03:41:08] [checkout-service] [FATAL] Database connection pool failed to initialize. Expected timeout >= 5000ms. Configured value is 50ms.
+[2026-10-12 03:41:09] [checkout-service] [FATAL] Stack Trace:
+[2026-10-12 03:41:09] [checkout-service] [FATAL]   at github.com/cloudretail/checkout/db.MustConnect (pool.go:88)
+[2026-10-12 03:41:09] [checkout-service] [FATAL]   at github.com/cloudretail/checkout/server.Start (server.go:42)
+[2026-10-12 03:41:09] [checkout-service] [FATAL]   at main.main (main.go:19)
+[2026-10-12 03:41:10] [checkout-service] [FATAL] Process exiting with status code 1
+[2026-10-12 03:41:12] [k8s-client] Pod pod-checkout-service-9c10aa-ww87z terminated with exit code 1
+[2026-10-12 03:41:13] [k8s-client] Pod pod-checkout-service-9c10aa-ww87z state: CrashLoopBackOff (restarts: 1)
+[2026-10-12 03:41:15] [orchestrator] [CRITICAL] Canary deployment health check failed: checkout-service is unhealthy!
+[2026-10-12 03:41:16] [orchestrator] [CRITICAL] Aborting deployment pipeline. Halting canary promotion.
+[2026-10-12 03:41:18] [alert-manager] Paging on-call engineer via PagerDuty (Incident #INC-94821)
+[2026-10-12 03:41:20] [alert-manager] Incident Title: [P1 Outage] checkout-service failing healthz in canary release v2.4.1
+[2026-10-12 03:41:22] [ci-orchestrator] Pipeline status: FAILED (Exit Code: 1)
+[2026-10-12 03:41:25] [ci-orchestrator] Execution time: 3m 24s. Artifact logs archived at /opt/builds/logs/build-8f3c1a9e.log
+[2026-10-12 03:41:28] [ci-orchestrator] Cleaned up temporary build runners.
+[2026-10-12 03:41:30] [ci-orchestrator] End of build log.

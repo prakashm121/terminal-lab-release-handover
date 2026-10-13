@@ -1,0 +1,9 @@
+# Lab work and temporary student attempts
+lab-work/
+*.log
+!lab/data/*.log
+*.tmp
+__pycache__/
+*.py[cod]
+.DS_Store
+Thumbs.db

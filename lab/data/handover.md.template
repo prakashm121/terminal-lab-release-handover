@@ -1,0 +1,36 @@
+# Incident Handover Report: Canary Release v2.4.1
+
+## 1. Incident Overview
+- **Incident ID:** INC-94821
+- **Severity:** P1 (Critical Outage)
+- **Investigator / On-Call Engineer:** [YOUR NAME HERE]
+- **Failing Microservice:** [REPLACE WITH FAILING SERVICE IDENTIFIED IN BUILD.LOG]
+- **Deployment Status:** Canary Halted / Rolled Back
+
+## 2. Root Cause Analysis
+- **Observed Symptoms:** Pods entered CrashLoopBackOff after failing healthcheck probe (`/healthz` returned 503).
+- **Log Error Excerpt:**
+  ```text
+  [PASTE ERROR LOG LINES FROM BUILD.LOG HERE]
+  ```
+- **Configuration Root Cause:**
+  - Parameter: `DB_TIMEOUT_MS`
+  - Bad Value (v2.4.1): [FILL IN]
+  - Expected Stable Value (v2.4.0): [FILL IN]
+
+## 3. Triage & Ticket Allocation
+Below are the open tickets for the failing service, prioritized by Severity (1=Critical to 4=Low):
+```text
+[PASTE CONTENTS OF SORTED_TICKETS.TXT HERE]
+```
+
+## 4. Engineer Workload Summary
+Active ticket count per owner for the affected service (generated via `sort | uniq -c`):
+```text
+[PASTE CONTENTS OF OWNERS_SUMMARY.TXT HERE]
+```
+
+## 5. Remediation & Verification
+- **Configuration Diff Saved:** `config.diff`
+- **Working Config Corrected:** `config-fixed.env` (restored DB_TIMEOUT_MS to 5000 and PAYMENT_RETRY_ATTEMPTS to 3)
+- **Next Actions:** Re-trigger canary deploy pipeline for `checkout-service` once morning shift signs off.

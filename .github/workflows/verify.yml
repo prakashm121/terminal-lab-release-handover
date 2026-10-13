@@ -1,0 +1,67 @@
+name: Lab Verification & CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  verify-lab:
+    name: Verify Lab Scripts & Experiments
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install system tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nano less bsdmainutils diffutils coreutils
+
+      - name: Install Python dependencies
+        run: |
+          pip install fpdf
+
+      - name: Step 1 - Pre-flight environment check
+        run: |
+          python3 scripts/verify_environment.py
+
+      - name: Step 2 - Verify Student Booklet Generation (5-10 pages)
+        run: |
+          python3 book/build_booklet.py
+
+      - name: Step 3 - Test Fresh Attempt Creation (start.py)
+        run: |
+          python3 lab/start.py
+          test -d lab-work/attempt-1
+          test -f lab-work/attempt-1/build.log
+          test -f lab-work/attempt-1/tickets.txt
+
+      - name: Step 4 - Execute Reference Solution (solve.py)
+        run: |
+          python3 lab/solution/solve.py lab-work/attempt-1
+
+      - name: Step 5 - Verify 100% Passing Output (check.py)
+        run: |
+          python3 lab/check.py lab-work/attempt-1
+
+      - name: Step 6 - Verify Shell Wrapper Compatibility (check.sh)
+        run: |
+          bash lab/check.sh lab-work/attempt-1
+
+      - name: Step 7 - Verify Deliberate Failure is Caught (demo-broken)
+        run: |
+          echo "Testing that check.py properly detects deliberate error in demo-broken..."
+          if python3 lab/check.py lab/demo-broken; then
+            echo "ERROR: check.py should have failed on demo-broken!" >&2
+            exit 1
+          else
+            echo "SUCCESS: check.py caught the deliberate un-aggregated sort bug as expected."
+          fi

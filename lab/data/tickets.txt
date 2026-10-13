@@ -1,0 +1,14 @@
+TICKET_ID|SERVICE|SEVERITY|ASSIGNEE|STATUS|TITLE
+CR-102|checkout-service|1|alice|OPEN|Checkout gateway connection timeout in canary
+CR-45|auth-service|2|devon|RESOLVED|Update RS256 token signing rotation keys
+CR-18|checkout-service|2|bob|OPEN|Database pool max connections sizing review
+CR-304|inventory-api|3|elena|IN_PROGRESS|Slow warehouse query on holiday catalog cache
+CR-9|checkout-service|1|alice|OPEN|Canary pods entering CrashLoopBackOff state
+CR-512|frontend-web|4|devon|OPEN|Favicon missing on mobile safari browser
+CR-22|checkout-service|3|charlie|OPEN|Update Prometheus metrics exporter to v1.4
+CR-88|auth-service|3|elena|OPEN|Audit user session revocation rate limits
+CR-105|checkout-service|2|bob|OPEN|Payment gateway retry attempts dropped to zero
+CR-3|inventory-api|2|charlie|RESOLVED|Deadlock on concurrent inventory stock decrease
+CR-7|checkout-service|1|alice|OPEN|Investigate DB_TIMEOUT_MS env var regression
+CR-210|frontend-web|3|devon|IN_PROGRESS|Shopping cart UI spinner hangs during retry
+CR-402|checkout-service|4|bob|OPEN|Add structured JSON logging to checkout handlers
