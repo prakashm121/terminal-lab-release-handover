@@ -25,6 +25,19 @@ BOLD   = "\033[1m"     if USE_COLOR else ""
 DIM    = "\033[2m"     if USE_COLOR else ""
 RESET  = "\033[0m"     if USE_COLOR else ""
 
+# UTF-8 symbol support (falls back to ASCII on Windows cp1252 terminals)
+_enc = getattr(sys.stdout, "encoding", "ascii") or "ascii"
+USE_UTF8 = _enc.lower().replace("-", "") in ("utf8", "utf16", "utf32")
+
+HRULE    = "\u2500" if USE_UTF8 else "-"   # ─  horizontal rule
+ARROW    = "\u279c" if USE_UTF8 else "->"  # ➜  hint arrow
+BLK_FULL = "\u2588" if USE_UTF8 else "#"   # █  filled bar block
+BLK_EMPT = "\u2591" if USE_UTF8 else "."   # ░  empty bar block
+ICO_PASS = "\u2714" if USE_UTF8 else "+"   # ✔  tick
+ICO_FAIL = "\u2718" if USE_UTF8 else "x"   # ✘  cross
+ICO_STAR = "\u2726" if USE_UTF8 else "*"   # ✦  star (all-pass)
+ICO_HALF = "\u25d0" if USE_UTF8 else "~"   # ◐  half-circle (almost)
+
 def resolve_target_dir() -> Path:
     if len(sys.argv) > 1:
         return Path(sys.argv[1]).resolve()
@@ -45,8 +58,25 @@ def resolve_target_dir() -> Path:
             
     print(f"{RED}[ERROR]{RESET} Cannot locate an attempt directory to verify.")
     print("Please cd into your attempt folder (e.g., 'cd lab-work/attempt-1') and run:")
-    print("  python ../../lab/check.py   (or: ../../lab/check.sh)")
+    print("  python3 ../../lab/check.py")
     sys.exit(1)
+
+
+def _wrap(text: str, width: int = 58) -> list[str]:
+    """Simple word-wrap that respects the given column width."""
+    words = text.split()
+    lines: list[str] = []
+    current = ""
+    for word in words:
+        if current and len(current) + 1 + len(word) > width:
+            lines.append(current)
+            current = word
+        else:
+            current = (current + " " + word).strip()
+    if current:
+        lines.append(current)
+    return lines or [""]
+
 
 def main():
     target_dir = resolve_target_dir()
@@ -73,33 +103,15 @@ def main():
         nonlocal failed_checks
         print(f"  [{RED}FAIL{RESET}] {task_name}")
         # Hint block — indented and styled for readability
-        print(f"  {DIM}{'─' * 62}{RESET}")
+        print(f"  {DIM}{HRULE * 62}{RESET}")
         hint_lines = _wrap(hint, width=58)
         for i, line in enumerate(hint_lines):
-            prefix = f"  {YELLOW}➜{RESET} " if i == 0 else "      "
+            prefix = f"  {YELLOW}{ARROW}{RESET} " if i == 0 else "      "
             print(f"{prefix}{line}")
-        print(f"  {DIM}{'─' * 62}{RESET}")
+        print(f"  {DIM}{HRULE * 62}{RESET}")
         failed_checks += 1
         results.append((False, task_name))
 
-
-def _wrap(text: str, width: int = 58) -> list[str]:
-    """Simple word-wrap that respects the given column width."""
-    words = text.split()
-    lines: list[str] = []
-    current = ""
-    for word in words:
-        if current and len(current) + 1 + len(word) > width:
-            lines.append(current)
-            current = word
-        else:
-            current = (current + " " + word).strip()
-    if current:
-        lines.append(current)
-    return lines or [""]
-
-    # --------------------------------------------------------------------------
-    # Check 1: Tool [less] - Identification of Failing Microservice
     # --------------------------------------------------------------------------
     failing_svc_file = target_dir / "failing_service.txt"
     handover_file = target_dir / "handover.md"
@@ -303,8 +315,8 @@ def _print_score_card(
     bar_width = 40
     filled     = round(bar_width * passed / total)
     empty      = bar_width - filled
-    bar_filled = f"{GREEN}{'█' * filled}{RESET}"
-    bar_empty  = f"{DIM}{'░' * empty}{RESET}"
+    bar_filled = f"{GREEN}{BLK_FULL * filled}{RESET}"
+    bar_empty  = f"{DIM}{BLK_EMPT * empty}{RESET}"
     bar        = f"[{bar_filled}{bar_empty}]"
 
     # ── Color the score based on result ───────────────────────────────────────
@@ -324,33 +336,33 @@ def _print_score_card(
     print(f"  Score     {score_color}{BOLD}{passed}/{total}{RESET} checks passed"
           + (f"  ({failed} remaining)" if failed else ""))
     print("")
-    print(f"  {DIM}{'─' * 62}{RESET}")
+    print(f"  {DIM}{HRULE * 62}{RESET}")
     print(f"  {BOLD}Check Breakdown:{RESET}")
-    print(f"  {DIM}{'─' * 62}{RESET}")
+    print(f"  {DIM}{HRULE * 62}{RESET}")
 
     # Per-check breakdown row
     for ok, label in results:
-        icon   = f"{GREEN}✔{RESET}" if ok else f"{RED}✘{RESET}"
+        icon   = f"{GREEN}{ICO_PASS}{RESET}" if ok else f"{RED}{ICO_FAIL}{RESET}"
         status = f"{GREEN}PASS{RESET}" if ok else f"{RED}FAIL{RESET}"
         # Trim label to a short task identifier for the table
         short  = label.split(":")[0].strip()   # e.g. "Task 3 (sort)"
         print(f"  {icon} {status}  {short}")
 
-    print(f"  {DIM}{'─' * 62}{RESET}")
+    print(f"  {DIM}{HRULE * 62}{RESET}")
     print("")
 
     if passed == total:
-        print(f"{BOLD}{GREEN}  ✦ ALL CHECKS PASSED — Outstanding work!{RESET}")
+        print(f"{BOLD}{GREEN}  {ICO_STAR} ALL CHECKS PASSED — Outstanding work!{RESET}")
         print("    Your incident handover report is complete and verified.")
         print("    The morning shift is in good hands. Great job!")
     elif passed >= total - 2:
-        print(f"{BOLD}{YELLOW}  ◐ ALMOST THERE — {failed} check(s) remaining.{RESET}")
+        print(f"{BOLD}{YELLOW}  {ICO_HALF} ALMOST THERE — {failed} check(s) remaining.{RESET}")
         print("    Re-read the hints above, fix the flagged files, and")
-        print("    re-run:  python ../../lab/check.py")
+        print("    re-run:  python3 ../../lab/check.py")
     else:
-        print(f"{BOLD}{RED}  ✘ {failed} check(s) failed.{RESET}")
+        print(f"{BOLD}{RED}  {ICO_FAIL} {failed} check(s) failed.{RESET}")
         print("    Work through the hints above from top to bottom.")
-        print("    Re-run:  python ../../lab/check.py   after each fix.")
+        print("    Re-run:  python3 ../../lab/check.py   after each fix.")
 
     print("")
     print("==================================================================")
