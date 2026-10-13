@@ -1,6 +1,6 @@
 # Tech Lab 2: Terminal Tooling & SRE Incident Handover
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/prakashm121/terminal-lab-release-handover?quickstart=1)
 
 > **Course:** Software Engineering Tools & Systems  
 > **Module:** Core Unix Terminal Environments  
