@@ -1,63 +1,62 @@
-# Reviewer Notes & Instructor Guide
+# Reviewer Notes: TA + Tech Lab 2
 
-**Assignment:** TA + Tech Lab 2: Core Unix Terminal Tooling  
-**Author / Candidate:** Candidate Submission  
-**Scenario:** CloudRetail SRE Incident Handover (Triaging Canary Outage INC-94821)  
-**Deliverables Directory:**
-- Student Booklet PDF: `book/lab-book.pdf` (9 pages, strictly adheres to 5–10 page requirement)
-- Fresh-Attempt Script: `lab/start.py` & `lab/start.sh` (creates `lab-work/attempt-N`, non-destructive)
-- Automated Checker: `lab/check.py` & `lab/check.sh` (read-only, styled hint blocks, visual score card)
-- Reset Script: `lab/reset.py` (wipes & re-scaffolds an attempt; confirmation-gated, non-destructive to fixtures)
-- Reference Solution: `lab/solution/solve.py` & `lab/solution/solve.sh`
-- Deliberate Validation Failure: `lab/demo-broken/` (for video walkthrough)
-- Devcontainer Environment: `.devcontainer/devcontainer.json` & `.devcontainer/Dockerfile`
+**Author:** Prakash Jayavant Mandi
+**Scenario:** CloudRetail incident handover. A canary release broke checkout, and the learner finds the failing service, the ticket owners and the config change, then completes a handover report.
+**Learner time:** 60 to 90 minutes
+**Repository:** https://github.com/prakashm121/terminal-lab-release-handover
+**Codespace:** https://codespaces.new/prakashm121/terminal-lab-release-handover?quickstart=1
 
----
+## Contents of the repository
 
-## 1. Tool-to-Experiment Mapping
+| Item | Path |
+|---|---|
+| Student lab book (9 pages, PDF) | `book/lab-book.pdf` |
+| Editable book source | `book/lab-book.md` |
+| Start a fresh attempt (never overwrites an older one) | `lab/start.py` |
+| Read-only checker | `lab/check.py` |
+| Reference solution | `lab/solution/solve.py` |
+| Codespace environment | `.devcontainer/devcontainer.json`, `.devcontainer/Dockerfile` |
+| Setup and launch instructions | `README.md` |
 
-Every tool is taught through a single, continuous Software Engineering incident narrative. Each output directly feeds the next step and culminates in the final handover deliverable.
+`start.py` and `check.py` are the scripts used in the README and the video.
 
-| Step | Tool | Hands-On Role in Incident Story | Key Flags & Concepts Taught | Artifact Produced |
-| :---: | :---: | :--- | :--- | :--- |
-| **1** | `history` | Recall earlier failed curl probes and grep queries without retyping. | `history 10`, `history \| grep`, `!N`, `Ctrl+R` (reverse search, cycle older matches, Right Arrow to edit in place, `Ctrl+G` to cancel). | `investigation.log` |
-| **2** | `less` | Deep search through 180+ line CI/CD build and deploy log to find crashing container. | `Space`, `b`, `g`, `G`, `/pattern`, `n`, `N`, `q`. Why `cat` fails on production logs. | `failing_service.txt` (`checkout-service`) |
-| **3** | `cut` | Isolate fields from Jira incident database (`tickets.txt`). | Quoted delimiter `-d "|"`, `-f 1,4`, field ranges. Why unquoted `|` errors in bash. | `checkout_tickets.txt` (7 records) |
-| **4** | `sort` | Order tickets by numerical severity and demonstrate shell truncation trap. | `-n` (numeric vs text ASCII sort: why `100` sorts before `2` in ASCII), `-r`, `-t "|"`, `-k 3,3n`, `-o` safe output. | `sorted_tickets.txt` & sandbox trap demo |
-| **5** | `uniq` | Aggregate ticket load per engineer and prove pipeline order sensitivity. | `-c` (occurrence count), adjacent-only restriction, non-commutative Unix pipelines (`sort \| uniq` vs `uniq \| sort`). | `owners_summary.txt` (`3 alice`, `3 bob`, `1 charlie`) |
-| **6** | `diff` | Compare stable v2.4.0 vs broken v2.4.1 config, isolate 50ms timeout bug. | Standard diff symbols (`<`, `>`, `c`, `a`, `d`) vs unified diff (`diff -u`, `---`, `+++`, `-`, `+`, `@@`). | `config.diff` |
-| **7** | `nano` | In-terminal editing to repair configuration and assemble final incident report. | `Ctrl+O` WriteOut, `Enter`, `Ctrl+X` Exit, `Ctrl+W` Where Is / search, `Ctrl+K` cut, `Ctrl+U` paste/uncut. | `config-fixed.env` & `handover.md` |
+## 1. Tool-to-experiment mapping
 
----
+The experiments follow the order of the video and the book. Each result is used again later.
 
-## 2. Complete Answer Key & Reference Solution
+| # | Tool | What the learner does in the story | Flags and keys taught | Result it produces |
+|---|---|---|---|---|
+| 1 | `less` | Search the build log for the fatal error of the current release | `Space`, `b`, `g`, `G`, `/FATAL`, `n`, `N`, `q` | The failing service: `checkout-service` |
+| 2 | `cut` | Pull the checkout tickets and read the assignee field | `-d "\|"` (quoted), `-f 1,4`, `-f 4` | `checkout_tickets.txt` (7 rows) |
+| 3 | `sort` | Order the tickets by severity; trigger the `>` trap in a sandbox | text vs numeric order, `-n`, `-r`, `-t`, `-k 3,3n`, `>` to a different file | `sorted_tickets.txt` |
+| 4 | `uniq` | Count tickets per assignee; compare two pipeline orders | adjacent duplicates, `-c`, `sort \| uniq -c` | `owners_summary.txt` |
+| 5 | `diff` | Compare the working config with the broken one | identical files, `-u`, `-`, `+`, input order, saving the output | `config.diff` |
+| 6 | `nano` | Create a new file, repair the config, finish the report | `Ctrl+O`, `Enter`, `Ctrl+X`, `Ctrl+W` | `failing_service.txt`, `config-fixed.env`, `handover.md` |
+| 7 | `history` | Bring back and edit commands typed earlier in the lab | `history 10`, `history \| grep -F`, `Ctrl+R` (repeat), `Right Arrow`, `Ctrl+G` | Reused and edited commands |
 
-The full end-to-end solution can be executed automatically via `python3 lab/solution/solve.py <directory>` or manually as follows:
+## 2. Answer key
 
-### Task 1: `history`
+`python3 lab/solution/solve.py <attempt-folder>` produces the file results. The interactive steps (`less`, `nano`, `history`) cannot be scripted, so the script writes their results directly.
+
+Commands run from inside `lab-work/attempt-N/`.
+
+### Experiment 1: less
 ```bash
-# Investigative commands run in terminal:
-curl -s http://localhost:8080/healthz
-grep -i "timeout" build.log
-tail -n 15 build.log
-
-# Reverse search via Ctrl+R -> 'timeout' -> Right Arrow -> add -n -> Enter
-# Record to audit log:
-echo "grep -E '(FATAL|ERROR|CRITICAL)' build.log" >> investigation.log
-```
-
-### Task 2: `less`
-```bash
+wc -l build.log
+grep -c FATAL build.log
 less build.log
-# Inside less: /FATAL -> Enter -> n -> inspect stack trace -> q
-echo "checkout-service" > failing_service.txt
 ```
+Inside `less`: `Space` and `b` move by screen, `G` and `g` jump to the end and start, `/FATAL` then `n` and `N` move between matches, `q` quits. The log has more than one FATAL line, so the learner reads the surrounding lines to choose the one that belongs to the current release. Answer: `checkout-service`.
 
-### Task 3: `cut`
+### Experiment 2: cut
 ```bash
-grep "checkout-service" tickets.txt > checkout_tickets.txt
+head -n 3 tickets.txt
+cut -d "|" -f 1,4 tickets.txt
+grep -F "|checkout-service|" tickets.txt > checkout_tickets.txt
+cut -d "|" -f 4 checkout_tickets.txt
 ```
-*Extracted Records:*
+Fields: `ID|service|severity|assignee|status|title`. An unquoted `cut -d | -f 1` does not work: Bash treats the `|` as a pipe and splits the command in two. `checkout_tickets.txt` has 7 rows:
+
 ```text
 CR-102|checkout-service|1|alice|OPEN|Checkout gateway connection timeout in canary
 CR-18|checkout-service|2|bob|OPEN|Database pool max connections sizing review
@@ -68,91 +67,116 @@ CR-7|checkout-service|1|alice|OPEN|Investigate DB_TIMEOUT_MS env var regression
 CR-402|checkout-service|4|bob|OPEN|Add structured JSON logging to checkout handlers
 ```
 
-### Task 4: `sort` & Redirection Trap
+### Experiment 3: sort
 ```bash
-# Safe sorting by severity field (column 3, numeric):
+printf '2\n9\n18\n102\n' | sort        # 102 18 2 9 (text order)
+printf '2\n9\n18\n102\n' | sort -n     # 2 9 18 102
+printf '2\n9\n18\n102\n' | sort -nr    # 102 18 9 2
 sort -t "|" -k 3,3n checkout_tickets.txt > sorted_tickets.txt
+```
+`-t "|"` sets the field separator, `-k 3,3` sorts on field 3 only, and `n` compares it as a number. Rows with the same severity are ordered by whole-line comparison, so their order can differ between locales. Compare the severity order, not the tie order.
 
-# Sandbox demonstration of truncation trap:
+**Trap (in the sandbox copy only):**
+```bash
+wc -l sandbox/tickets_copy.txt
 sort sandbox/tickets_copy.txt > sandbox/tickets_copy.txt
-# Result: sandbox/tickets_copy.txt is truncated to 0 bytes by shell O_TRUNC before sort reads!
+wc -l sandbox/tickets_copy.txt         # 0
 ```
+Bash applies `>` first and empties the destination, so `sort` reads an empty file. The input file and the destination of `>` must be different files. A safe version is `sort file > file.tmp && mv file.tmp file`.
 
-### Task 5: `uniq` & Pipeline Order Demonstration
+### Experiment 4: uniq
 ```bash
-# The bug when omitting sort (Experiment A):
-cut -d "|" -f 4 checkout_tickets.txt | uniq -c
-# Output: 1 alice, 1 bob, 1 alice, 1 charlie, 1 bob, 1 alice, 1 bob (unmerged!)
-
-# The correct order (Experiment B):
+printf 'alice\nalice\nbob\n' | uniq                                      # adjacent duplicates merge
+cut -d "|" -f 4 checkout_tickets.txt | uniq -c                           # every count is 1
+cut -d "|" -f 4 checkout_tickets.txt | sort | uniq -c                    # 3 alice, 3 bob, 1 charlie
+cut -d "|" -f 4 checkout_tickets.txt | uniq -c | sort -nr                # wrong: hides the busiest owner
+cut -d "|" -f 4 checkout_tickets.txt | sort | uniq -c | sort -nr         # right
 cut -d "|" -f 4 checkout_tickets.txt | sort | uniq -c | sed 's/^[ \t]*//' > owners_summary.txt
-# Output:
-# 3 alice
-# 3 bob
-# 1 charlie
 ```
+`owners_summary.txt` contains `3 alice`, `3 bob` and `1 charlie`. The `sed` step only removes the padding that `uniq -c` adds.
 
-### Task 6: `diff`
+### Experiment 5: diff
 ```bash
+diff config-v1.env config-v1.env           # no output: identical
+diff -u config-v1.env config-v2.env        # shows the changes
 diff -u config-v1.env config-v2.env > config.diff
 ```
-*Identified Root Cause:*
-`DB_TIMEOUT_MS=50` (regressed from stable `5000ms`, causing instant TCP handshake timeouts).
+The first file is the old working config and the second is the broken one. A line starting with `-` is only in the first file, and a line starting with `+` is only in the second. Two settings changed:
 
-### Task 7: `nano` & Synthesis
-- Edit `config-fixed.env` using `nano`:
-  - Set `DB_TIMEOUT_MS=5000`
-  - Set `PAYMENT_RETRY_ATTEMPTS=3`
-- Edit `handover.md` using `nano`:
-  - Fill all metadata, paste log snippet, tickets table, owner summary, and config diff verification.
+| Setting | `config-v1.env` | `config-v2.env` |
+|---|---|---|
+| `DB_TIMEOUT_MS` | 5000 | 50 |
+| `PAYMENT_RETRY_ATTEMPTS` | 3 | 0 |
 
----
+### Experiment 6: nano
+1. `nano failing_service.txt`: type `checkout-service`, `Ctrl+O`, `Enter`, `Ctrl+X`. Check with `cat`, then reopen it.
+2. `nano config-fixed.env`: set `DB_TIMEOUT_MS=5000` and `PAYMENT_RETRY_ATTEMPTS=3`. Save with `Ctrl+O`, `Enter`, exit with `Ctrl+X`.
+3. `diff -u config-v1.env config-fixed.env` prints nothing.
+4. `nano handover.md`: replace every placeholder using the earlier results (failing service, fatal log lines, `sorted_tickets.txt`, `owners_summary.txt`, the config change). `grep -F "[" handover.md` finds no placeholder left.
 
-## 3. Three Concrete Improvements Over the Reference Lab
+### Experiment 7: history
+```bash
+history 10
+history | grep -F "build.log"
+```
+`Ctrl+R`, type `build.log`, press `Ctrl+R` again to reach `grep -c FATAL build.log`, press `Right Arrow`, change `FATAL` to `ERROR`, check the line, then `Enter`. Then `Ctrl+R`, type `tickets`, and press `Ctrl+G`: nothing runs and the prompt is restored. The learner can also recall the earlier `diff -u` command, delete its `> config.diff` ending, and change `config-v2.env` to `config-fixed.env` to verify the repair.
 
-| # | Improvement | Weakness in Reference Lab | How Our Lab Solves It |
-| :-: | :--- | :--- | :--- |
-| **1** | **Strict, High-Signal Page Count (9 Pages vs 13 Pages)** | The reference booklet was 13 pages (violating the 5–10 page constraint) with excessive filler text, pilot disclaimers, and unnecessary padding. | Our booklet is exactly 9 pages. Every section is dense with high-value technical context, visual tables, clear flags, and explicit step-by-step instructions. |
-| **2** | **Explicit Experimental Traps (Same-File Truncation & Sort-Before-Uniq Order)** | The reference lab omitted the same-file `>` truncation trap entirely, and only mentioned "order matters" as a passive quiz question with no hands-on proof. | We built two dedicated experiments: (1) A safe sandbox test demonstrating why shell `O_TRUNC` destroys files in `sort file > file`, and (2) A side-by-side comparison showing why `cut \| uniq -c` fails on non-adjacent lines while `cut \| sort \| uniq -c` succeeds. |
-| **3** | **Integrated SRE Narrative, Read-Only Checker with Auto-Hints & Visual Score Card** | The reference lab used disparate, unconnected toy datasets and a Python checker that leaked solution strings with a plain PASS/FAIL line. | We contextualized the entire lab into a single SRE deployment incident (INC-94821). Our `check.py` is strictly read-only, prints a **styled word-wrapped hint block** (with `➜` arrow) under every failing check, and displays a **visual block-character progress bar** plus a **per-check score card** at the end (`Score: 6/7  ████████░░░░  85%`). |
-| **4** | **`lab/reset.py` — Confirmation-Gated Attempt Reset** | The reference lab had no reset path. Students who made a mistake had to manually find and delete their output files, or start a new attempt with a higher number. | `python3 lab/reset.py` shows a full manifest of files that will be deleted, requires the student to type `yes` to proceed, then wipes all 7 student-generated output files and the `sandbox/` directory before restoring all fixtures. Attempt number and creation timestamp are preserved in `.attempt_meta`. |
+## 3. Validation
 
----
+Run from inside an attempt folder:
 
-## 4. Expected Learner Completion Time & Actual Time Spent
+```bash
+python3 ../../lab/check.py
+```
 
-- **Expected Learner Completion Time:** 90–120 Minutes
-  - Tailored for students who completed Lab 1 (basic navigation and simple file inspection).
-  - Scaffolded progression: high guidance in early experiments (`history`, `less`), tapering off towards the independent synthesis task (`nano` handover).
-- **Actual Time Spent by Author:** ~7 Hours total
-  - *Pedagogy & Incident Design:* 1.5 Hours
-  - *Data Engineering & Core Tooling (`start.py`, `check.py`):* 2.0 Hours
-  - *Student Lab Book Authoring & PDF Layout Optimization:* 2.5 Hours
-  - *Automated CI & Codespace Pre-Flight Testing:* 1.0 Hour
+The checker only reads files and never changes them. It runs 7 checks, one per task. A failing check prints a hint under it.
 
----
+**Demonstration of a wrong result (also in the video):**
+1. With a correct attempt, run `cut -d "|" -f 4 checkout_tickets.txt | uniq -c > owners_summary.txt`. This forgets `sort`.
+2. Run the checker. The uniq check fails with a hint to sort before `uniq -c`. The other six checks still pass. The wording of the hint is whatever `check.py` prints.
+3. Fix it with `cut -d "|" -f 4 checkout_tickets.txt | sort | uniq -c | sed 's/^[ \t]*//' > owners_summary.txt`.
+4. Run the checker again. All 7 checks pass.
 
-## 5. Blockers or Assumptions
+**Expected `diff` output.** In experiment 5, `diff` prints differences on purpose. That is the normal result of comparing two different files, not an error. Only an empty result from a comparison with the correct version means the repair is complete.
 
-- **Assumptions on Learner Prerequisite Knowledge:**
-  - Assumes students already understand Lab 1 fundamentals: `cd`, `pwd`, `ls`, `cat`, and basic `grep`.
-  - Assumes students have access to a standard Unix terminal environment (Bash) or GitHub Codespaces.
-- **Platform Compatibility Assumptions:**
-  - Standardized on POSIX-compliant utilities (`coreutils`, `diffutils`, `less`, `nano`) and Python 3.8+.
-  - Fully compatible with Ubuntu 22.04 LTS devcontainers, GitHub Codespaces, and local Linux/WSL environments.
-- **Blockers Encountered & Resolved:**
-  - *Cross-Platform Windows Redirection:* The same-file truncation trap (`sort file > file`) behaves differently across shells; solved by isolating it into a safe `sandbox/` folder with explicit explanation of shell `O_TRUNC` evaluation order.
-  - *Booklet Length Restriction:* The initial reference lab was 13 pages (violating the 5–10 page constraint); resolved by eliminating pilot filler text and condensing into a high-density, professional 9-page guide.
+**What the checker cannot show.** It checks saved files. It cannot prove that the learner used `history`, `nano` or `less`. A reviewer should ask the learner to find and edit an earlier command, save a change in `nano`, and search in `less`.
 
----
+## 4. Three improvements over the reference lab
 
-## 6. AI Usage Disclosure
+| # | Improvement | In the reference lab | In this lab |
+|---|---|---|---|
+| 1 | One connected scenario | Practice uses separate datasets (names, scores, timetables). Only the last challenge combines skills. | Each result feeds the next: the log gives the service, the service selects the tickets, the tickets give the owners, the config diff gives the cause, and all of it goes into `handover.md`. |
+| 2 | Both traps are run by the learner | The `>` rule is stated in a note and a hint but never demonstrated. `uniq` is shown before and after `sort`, but only the sorted order is counted. | The learner empties a sandbox file with `sort file > file`, and compares `uniq -c \| sort -nr` with `sort \| uniq -c \| sort -nr` on the same data. |
+| 3 | Hints in the checker, and a shown failure | The checker prints `PASS` or `CHECK` for each file with no explanation. | Each failing check prints a hint. The video shows a deliberately wrong result being caught, fixed and passing. |
 
-- **What AI was used for:**
-  - Assisted in brainstorming the CloudRetail SRE failed-deploy incident scenario.
-  - Scaffolding realistic multi-stage log lines for `build.log` and tabular Jira records for `tickets.txt`.
-- **What was manually designed, checked, and verified by Author:**
-  - All educational sequencing, experiment goals, and flag explanations.
-  - All test scripts (`start.py`, `check.py`, `solve.py`, `verify_environment.py`, CI workflow).
-  - Both experimental traps (same-file `>` truncation mechanics and pipeline order sensitivity in `sort | uniq`).
-  - Tested 100% end-to-end in a clean container environment to ensure zero broken paths or unhandled edge cases.
+The lab book is 9 pages. The reference booklet is 13 pages.
+
+## 5. Time
+
+**Expected learner time:** 60 to 90 minutes, for learners who know the Lab 1 commands.
+
+**Actual time spent by the author:** about 17 hours.
+
+| Work | Hours |
+|---|---|
+| Pedagogy and incident design | 1.5 |
+| Data and core scripts (`start.py`, `check.py`) | 3.0 |
+| Lab book writing and PDF layout | 4.0 |
+| Codespace setup and fresh-Codespace testing | 2.0 |
+| Validation demo, README and these notes | 1.5 |
+| Walkthrough script and rehearsal | 1.5 |
+| Loom recording, editing and timestamps | 2.5 |
+| Final checks and submission email | 1.0 |
+
+## 6. Assumptions and limits
+
+- Learners know `cd`, `pwd`, `ls`, `cat` and basic `grep` from Lab 1.
+- The lab runs in the Codespace defined in `.devcontainer/`. It has not been tested on other systems.
+- Every attempt uses the same dataset, so the expected results are the same for all learners. The checker is readable and can be edited by a learner, so a pass is feedback and not proof of authorship.
+- Blockers: none.
+
+## 7. AI use
+
+I used Claude to plan the lab, to help draft the starter scripts and data files, to help draft the walkthrough script, and to review these notes.
+
+I ran every experiment by hand in a Codespace while recording the walkthrough. [Add anything else you rewrote or tested yourself, or delete this line.]
